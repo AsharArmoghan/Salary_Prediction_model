@@ -121,7 +121,7 @@ The dataset was split using a deterministic **80/20 Train-Test Split** (1,432 tr
 | Model Type | Mean Absolute Error (MAE) | Root Mean Squared Error (RMSE) | R² Score | Performance |
 | :--- | :--- | :--- | :--- | :--- |
 | **Linear Regression** | **0.133** | **0.169** | **0.893** | ⭐ **BEST** |
-| Ridge Regression (α=10) | 0.148 | 0.188 | 0.869 | Good |
+| Ridge Regression (α=1.837) | 0.148 | 0.188 | 0.869 | Good |
 | Polynomial Regression (deg=2) | 0.131 | 0.227 | 0.808 | Moderate |
 
 ### Model Selection Rationale
