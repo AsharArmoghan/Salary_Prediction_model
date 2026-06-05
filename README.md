@@ -1,7 +1,7 @@
 # 📈 Predictive Analytics Report: Multi-Variable Salary Forecasting Model
 
 ## 📑 Executive Summary
-This repository contains an end-to-end regression analysis workflow designed to isolate, analyze, and forecast annual compensation benchmarks based on professional demographics and experience. Using historical salary data (1,791 unique records), this project implements three regression models with comprehensive residual analysis to provide accurate salary predictions for talent acquisition and compensation budgeting.
+This repository contains an end-to-end regression analysis workflow designed to isolate, analyze, and forecast annual compensation benchmarks based on professional demographics and experience. Using historical salary data (1,792 unique records), this project implements two regression models (Linear Regression and GridSearchCV with polynomial features) with comprehensive residual analysis to provide accurate salary predictions for talent acquisition and compensation budgeting.
 
 ---
 
@@ -22,8 +22,8 @@ The data pipeline processes a multidimensional dataset containing both quantitat
 ### 2. Analytical Pipeline Hierarchy
 ```text
 ┌─────────────────────────────┐      ┌──────────────────────┐      ┌──────────────────────┐
-│ Raw Data (1,791 samples)    │ ───> │ Preprocessing Engine │ ───> │ Three Model Types    │
-│ [Age, Gender, Job, Edu, Exp]│      │ Scaling & Encoding   │      │ Linear, Ridge, Poly  │
+│ Raw Data (1,792 samples)    │ ───> │ Preprocessing Engine │ ───> │ Two Model Types      │
+│ [Age, Gender, Job, Edu, Exp]│      │ Scaling & Encoding   │      │ Linear, GridSearchCV │
 └─────────────────────────────┘      └──────────────────────┘      └──────────────────────┘
                                                                               │
                                                                               ▼
@@ -35,9 +35,9 @@ The data pipeline processes a multidimensional dataset containing both quantitat
 
 ### 3. Data Cleaning & Preparation
 - **Initial dataset**: 6,704 records with 6 features
-- **Null values**: 17 missing values across Age, Education, Experience, and Salary
-- **Duplicates removed**: 4,912 duplicate records, leaving 1,791 unique samples
-- **Train/Test split**: 80/20 (1,432 training, 359 test samples)
+- **Null values**: 17 missing values across Age, Education, Experience, and Salary (imputed using median/mode strategies)
+- **Duplicates removed**: 4,912 duplicate records (73% of data), leaving 1,792 unique samples
+- **Train/Test split**: 80/20 (1,433 training, 359 test samples)
 - **Target transformation**: Log1p transformation applied to Salary to handle right skewness
 
 ---
@@ -60,7 +60,30 @@ The data pipeline processes a multidimensional dataset containing both quantitat
 
 ## 📉 Data Visualizations & Diagnostic Plots
 
-### 1. Feature Distributions & Data Exploration
+### 1. Data Cleaning & Preprocessing
+
+#### Missing Values Analysis
+Percentage of missing values across all features before imputation:
+
+![Missing Values by Feature](assets/missing_value.png)
+
+**Insights:**
+- Missing values were minimal (< 0.1%) across all features
+- Age, Gender, Education, and Salary each had 2 missing values
+- SimpleImputer used median for continuous features, most_frequent for categorical
+- All missing values successfully handled before modeling
+
+#### Duplicate Records Impact
+Distribution comparison before and after removing 4,912 duplicate records:
+
+![Duplicate Removal Analysis](assets/duplicate_removal.png)
+
+**Insights:**
+- Duplicates represented 73% of the dataset (6,704 → 1,792 records)
+- Distribution shape remained consistent after removal
+- Mean salary decreased slightly, indicating duplicates were concentrated at higher salary ranges
+
+### 2. Feature Distributions & Data Exploration
 
 #### Salary, Age, and Experience Distribution
 Distribution plots showing the frequency and normality of the primary features with overlaid normal distribution curves:
@@ -73,7 +96,29 @@ Distribution plots showing the frequency and normality of the primary features w
 - Age and Experience correlations contribute to multicollinearity
 - Log transformation applied to Salary to normalize the distribution
 
-### 2. Feature Correlation Analysis
+### 3. Categorical Features Analysis
+
+#### Categorical Feature Distributions
+Breakdown of unique values and frequency counts for Gender, Education, and Job Title:
+
+![Categorical Features Distribution](assets/barh_plot.png)
+
+**Key Statistics:**
+- **Gender**: 2 unique values (male, female) - relatively balanced
+- **Education**: 6 levels (high school, diploma, bachelor's, master's, PhD, etc.)
+- **Job**: 193 unique job titles (one-hot encoded with infrequent handling)
+
+#### Categorical Features vs Salary Relationship
+Box plots showing salary distribution across different categorical variables:
+
+![Salary Distribution by Categorical Features](assets/box_plot_categorical.png)
+
+**Insights:**
+- PhD and Master's degree holders earn significantly higher median salaries
+- Female representation and gender-based salary gaps analyzed
+- Certain job titles correlate strongly with higher compensation
+
+### 4. Feature Correlation Analysis
 
 #### Correlation Heatmap
 Pearson correlation matrix highlighting relationships between numerical features:
@@ -86,19 +131,31 @@ Pearson correlation matrix highlighting relationships between numerical features
 - **Age ↔ Salary**: Strong positive correlation
 - Ridge Regression (α=10) used to handle multicollinearity
 
-### 3. Residual Analysis for Model Accuracy
+### 5. Outlier Detection & Analysis
+
+#### Outlier Detection Using IQR Method
+Identification of extreme values in Age, Experience, and Salary using Interquartile Range:
+
+![Outlier Detection Analysis](assets/outlier_detection.png)
+
+**Outlier Summary:**
+- **Age**: ~5% outliers (individuals > 50 years old)
+- **Experience**: ~8% outliers (individuals with > 19 years experience)
+- **Salary**: ~12% outliers (salaries > $200,000)
+- Outliers retained for model training to preserve real-world salary variations
+
+### 6. Residual Analysis for Model Accuracy
 
 #### Residual Scatter Plots (Actual vs Predicted)
-Model performance diagnostic showing prediction errors across the three regression approaches:
+Model performance diagnostic showing prediction errors across the two regression approaches:
 
 ![Residual Plots Comparison](assets/Residuals_plot.png)
 
 **Interpretation:**
-- **Linear Regression**: Points clustered tightly around the zero line (RMSE: 0.169, R²: 0.893) ✅
-- **Ridge Regression**: Slightly wider scatter (RMSE: 0.188, R²: 0.869)
-- **Polynomial Regression**: More dispersed residuals (RMSE: 0.227, R²: 0.808)
+- **Linear Regression**: Points clustered tightly around the zero line (RMSE: 0.164, R²: 0.896) ✅
+- **GridSearchCV (Polynomial)**: Tighter scatter with slightly better performance (RMSE: 0.149, R²: 0.914) ⭐
 - Red dashed line represents perfect prediction (zero error)
-- Randomly scattered points indicate good model fit
+- Randomly scattered points indicate good model fit without systematic bias
 
 #### Residual Distribution & Normality Assessment
 Histograms and Q-Q plots validating the normality assumption for regression models:
@@ -109,30 +166,31 @@ Histograms and Q-Q plots validating the normality assumption for regression mode
 - **Histograms**: Show residual frequency distributions centered near zero
 - **Q-Q Plots**: Compare residuals to theoretical normal distribution
   - Points following the diagonal line indicate normality
-  - Shapiro-Wilk test p-values determine statistical significance
-- Linear Regression shows best normality alignment
+  - Shapiro-Wilk test verifies statistical significance of normality assumption
+- Both models show excellent normality alignment, validating regression assumptions
 
 ---
 
 ## 🏆 Model Performance Benchmark Metrics
 
-The dataset was split using a deterministic **80/20 Train-Test Split** (1,432 training samples, 359 test samples). All models use standardized preprocessing via scikit-learn pipelines.
+The dataset was split using a deterministic **80/20 Train-Test Split** (1,433 training samples, 359 test samples). All models use standardized preprocessing via scikit-learn pipelines.
 
 | Model Type | Mean Absolute Error (MAE) | Root Mean Squared Error (RMSE) | R² Score | Performance |
 | :--- | :--- | :--- | :--- | :--- |
-| **Linear Regression** | **0.133** | **0.169** | **0.893** | ⭐ **BEST** |
-| Ridge Regression (α=1.837) | 0.148 | 0.188 | 0.869 | Good |
-| Polynomial Regression (deg=2) | 0.131 | 0.227 | 0.808 | Moderate |
+| **Linear Regression** | **0.127** | **0.164** | **0.896** | Excellent |
+| **GridSearchCV (Polynomial + Ridge)** | **0.112** | **0.149** | **0.914** | ⭐ **BEST** |
 
 ### Model Selection Rationale
-- **Linear Regression** emerged as the top performer with the highest R² (0.893) and lowest RMSE
-- Ridge Regression provides regularized predictions with slightly higher error (useful for preventing overfitting)
-- Polynomial Regression captures non-linear patterns but introduces higher variance
-- **Recommended model**: Linear Regression for production use due to interpretability and superior test performance
+- **GridSearchCV with Polynomial Features** emerged as the top performer with R² = 0.914 and RMSE = 0.149
+- Tested polynomial degrees [1, 2] and Ridge alpha values [0.1, 1, 1.8307, 10, 100]
+- Optimal parameters: Polynomial degree=2, Ridge alpha=1.8307
+- **Recommended model**: GridSearchCV polynomial model for production use due to superior test performance
+- Linear Regression serves as a strong baseline with excellent interpretability
 
-### Cross-Validation Results
-- Linear Regression 5-Fold CV Score: **60.28% ± 27.52%** (indicates moderate variance across folds)
-- Note: Full dataset cross-validation shows lower consistency than test set performance, suggesting data variability
+### Cross-Validation Strategy
+- 5-Fold Cross-Validation used during hyperparameter tuning
+- GridSearchCV evaluated 10 candidate models (2 polynomial degrees × 5 alpha values)
+- Test set performance validated model generalization capability
 
 ---
 
@@ -161,17 +219,3 @@ pip install -r requirements.txt
 - `scikit-learn`: Machine learning pipelines and models
 - `scipy`: Statistical testing (Shapiro-Wilk normality tests)
 - `kagglehub`: Dataset loading from Kaggle
-
-### Reproducing the Notebook Execution
-1. Launch **Jupyter Notebook** or **VS Code**
-2. Open `salary_prediction_model.ipynb`
-3. Select the Python kernel from your virtual environment
-4. Execute cells sequentially using **Run All** or cell-by-cell execution
-5. Models will train and generate residual analysis plots automatically
-
-### Key Output Sections in Notebook
-1. **Data Exploration**: EDA with distributions and box plots
-2. **Preprocessing**: Feature scaling, encoding, and log transformation
-3. **Model Training**: Linear, Ridge, and Polynomial regression models
-4. **Predictions**: Sample predictions with salary conversion
-5. **Residual Analysis**: Diagnostic plots for model accuracy assessment
