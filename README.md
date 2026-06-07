@@ -152,8 +152,8 @@ Model performance diagnostic showing prediction errors across the two regression
 ![Residual Plots Comparison](assets/Residuals_plot.png)
 
 **Interpretation:**
-- **Linear Regression**: Points clustered tightly around the zero line (RMSE: 0.164, R²: 0.896) ✅
-- **GridSearchCV (Polynomial)**: Tighter scatter with slightly better performance (RMSE: 0.149, R²: 0.914) ⭐
+- **Linear Regression**: Points clustered around the zero line (RMSE: 0.252, R²: 0.755) ✅
+- **GridSearchCV (Ridge)**: Moderate scatter with comparable performance (RMSE: 0.263, R²: 0.732)
 - Red dashed line represents perfect prediction (zero error)
 - Randomly scattered points indicate good model fit without systematic bias
 
@@ -177,19 +177,19 @@ The dataset was split using a deterministic **80/20 Train-Test Split** (1,433 tr
 
 | Model Type | Mean Absolute Error (MAE) | Root Mean Squared Error (RMSE) | R² Score | Performance |
 | :--- | :--- | :--- | :--- | :--- |
-| **Linear Regression** | **0.127** | **0.164** | **0.896** | Excellent |
-| **GridSearchCV (Polynomial + Ridge)** | **0.112** | **0.149** | **0.914** | ⭐ **BEST** |
+| **Linear Regression** | **0.190** | **0.252** | **0.755** | Strong |
+| **GridSearchCV (Ridge)** | **0.198** | **0.263** | **0.732** | Good |
 
 ### Model Selection Rationale
-- **GridSearchCV with Polynomial Features** emerged as the top performer with R² = 0.914 and RMSE = 0.149
-- Tested polynomial degrees [1, 2] and Ridge alpha values [0.1, 1, 1.8307, 10, 100]
-- Optimal parameters: Polynomial degree=2, Ridge alpha=1.8307
-- **Recommended model**: GridSearchCV polynomial model for production use due to superior test performance
-- Linear Regression serves as a strong baseline with excellent interpretability
+- **Linear Regression** emerged as the top performer with R² = 0.755 and RMSE = 0.252
+- Tested Ridge Regression with GridSearchCV using alpha values [0.1, 1, 1.8307, 10, 100]
+- GridSearchCV performed comparably with R² = 0.732 and RMSE = 0.263
+- **Recommended model**: Linear Regression for production use due to superior test performance and interpretability
+- GridSearchCV adds complexity without significant performance improvement on this dataset
 
 ### Cross-Validation Strategy
 - 5-Fold Cross-Validation used during hyperparameter tuning
-- GridSearchCV evaluated 10 candidate models (2 polynomial degrees × 5 alpha values)
+- GridSearchCV evaluated 5 candidate models (5 alpha values)
 - Test set performance validated model generalization capability
 
 ---
