@@ -1,221 +1,125 @@
-# 📈 Predictive Analytics Report: Multi-Variable Salary Forecasting Model
+# Salary Prediction Model (Regression)
 
-## 📑 Executive Summary
-This repository contains an end-to-end regression analysis workflow designed to isolate, analyze, and forecast annual compensation benchmarks based on professional demographics and experience. Using historical salary data (1,792 unique records), this project implements two regression models (Linear Regression and GridSearchCV with polynomial features) with comprehensive residual analysis to provide accurate salary predictions for talent acquisition and compensation budgeting.
+## Project Overview
 
----
+This project builds a machine learning model to predict employee salaries from demographic and professional attributes such as age, gender, education, job title, and experience.
+It demonstrates an end-to-end regression workflow that includes data cleaning, feature engineering, model training, evaluation, and deployment-ready preprocessing pipelines.
 
-## 🔬 Experimental Setup & Methodology
+## What This Project Shows
 
-### 1. Data Architecture
-The data pipeline processes a multidimensional dataset containing both quantitative metrics and categorical indicators:
+- Real-world tabular data preprocessing, including missing value handling, duplicate removal, and skewed feature transformation.
+- Reusable scikit-learn pipelines for numerical and categorical features.
+- Model comparison between Linear Regression and Ridge Regression with GridSearchCV.
+- Evaluation using MAE, RMSE, R², and residual analysis.
 
-| Feature Name | Data Type | Description | Preprocessing Method |
-| :--- | :--- | :--- | :--- |
-| **`Age`** | Continuous | Chronological age of the individual in years | StandardScaler (Mean=0, Std=1) |
-| **`Experience`** | Continuous | Net years of relevant professional experience | Log1p Transform + StandardScaler |
-| **`Gender`** | Categorical | Employee gender | One-Hot Encoding |
-| **`Education`** | Ordinal | Highest completed academic certification | Ordinal Encoding (High School → Bachelor's → Master's → PhD) |
-| **`Job`** | Nominal | Job title/position classification | One-Hot Encoding with infrequent collapsing |
-| **`Salary`** *(Target)*| Continuous | Annual gross compensation in USD | Log1p Transformed (Handles right skewness) |
+## Dataset and Features
 
-### 2. Analytical Pipeline Hierarchy
-```text
-┌─────────────────────────────┐      ┌──────────────────────┐      ┌──────────────────────┐
-│ Raw Data (1,792 samples)    │ ───> │ Preprocessing Engine │ ───> │ Two Model Types      │
-│ [Age, Gender, Job, Edu, Exp]│      │ Scaling & Encoding   │      │ Linear, GridSearchCV │
-└─────────────────────────────┘      └──────────────────────┘      └──────────────────────┘
-                                                                              │
-                                                                              ▼
-                                                                    ┌──────────────────────┐
-                                                                    │ Residual Analysis    │
-                                                                    │ & Performance Metrics│
-                                                                    └──────────────────────┘
-```
+- Final dataset size: 1,792 unique records after removing duplicates from the original 6,704 rows.
+- Target variable: Annual salary in USD.
+- Main input features: Age, Experience, Gender, Education level, and Job title.
 
-### 3. Data Cleaning & Preparation
-- **Initial dataset**: 6,704 records with 6 features
-- **Null values**: 17 missing values across Age, Education, Experience, and Salary (imputed using median/mode strategies)
-- **Duplicates removed**: 4,912 duplicate records (73% of data), leaving 1,792 unique samples
-- **Train/Test split**: 80/20 (1,433 training, 359 test samples)
-- **Target transformation**: Log1p transformation applied to Salary to handle right skewness
+Preprocessing steps:
 
----
+- Missing values imputed using median for numeric features and most frequent value for categorical features.
+- Log1p transformation applied to Salary and Experience to reduce right skew.
+- Standard scaling used for numeric features, with one-hot and ordinal encoding for categorical variables.
 
-## 📊 Core Statistics & Analytical Insights
+## Models and Performance
 
-### Exploratory Data Analysis (EDA)
-- **Salary range**: $350 - $250,000 USD (median: $115,000)
-- **Age range**: 21 - 62 years (mean: 33.6 years)
-- **Experience range**: 0 - 34 years (mean: 8.1 years)
-- **Strong multicollinearity detected**: Age and Experience correlation **r = 0.82**, both strongly correlated with Salary
-- **Target distribution**: Right-skewed, normalized using Log1p transformation
+| Model | MAE | RMSE | MSE | R²
+|---|---:|---:|---:|---|
+| Linear Regression | 0.200 | 0.265 | 0.070 | 0.727
+| Ridge Regression (GridSearchCV) | 0.199 | 0.264 | 0.070 |  0.730
 
-### Feature Engineering Insights
-- **Education levels**: High School, Bachelor's, Master's, PhD (ordinal encoding preserves hierarchy)
-- **Job categories**: 193 unique job titles → One-Hot Encoding with infrequent collapsing
-- **Experience transformation**: Log1p applied due to right skewness, then standardized
+Linear Regression is the preferred model because it performs slightly better on the test set and is easier to explain to non-technical stakeholders.
+Ridge Regression adds regularization, but it does not produce a meaningful improvement for this dataset.
 
----
+## Analysis Visualizations
 
-## 📉 Data Visualizations & Diagnostic Plots
+### 1. Missing Value Bar Chart
 
-### 1. Data Cleaning & Preprocessing
+This chart highlights the percentage or count of missing values across all features before imputation.
 
-#### Missing Values Analysis
-Percentage of missing values across all features before imputation:
+![MissingValueBarchar](./assets/bar_missing_values.png)
 
-![Missing Values by Feature](assets/missing_value.png)
 
-**Insights:**
-- Missing values were minimal (< 0.1%) across all features
-- Age, Gender, Education, and Salary each had 2 missing values
-- SimpleImputer used median for continuous features, most_frequent for categorical
-- All missing values successfully handled before modeling
+### 2. Demographic Analysis: Top Categories
 
-#### Duplicate Records Impact
-Distribution comparison before and after removing 4,912 duplicate records:
+This visualization summarizes the most frequent categories across key demographic features such as gender, education, and job title.
 
-![Duplicate Removal Analysis](assets/duplicate_removal.png)
+![DemographicAnalysis](./assets/bar_top_categories.png)
 
-**Insights:**
-- Duplicates represented 73% of the dataset (6,704 → 1,792 records)
-- Distribution shape remained consistent after removal
-- Mean salary decreased slightly, indicating duplicates were concentrated at higher salary ranges
 
-### 2. Feature Distributions & Data Exploration
+### 3. Bivariate Analysis: Demographics vs Target Salary
 
-#### Salary, Age, and Experience Distribution
-Distribution plots showing the frequency and normality of the primary features with overlaid normal distribution curves:
+This plot shows how salary varies across demographic categories and helps identify category-level salary trends.
 
-![Salary, Age, and Experience Distribution](assets/salary_age_exp_distribution.png)
+![BivariateAnalysis](./assets/bivariate_analysis_target.png)
 
-**Insights:**
-- All three features show right-skewed distributions
-- Salary range: $350 - $250,000 (median: $115,000)
-- Age and Experience correlations contribute to multicollinearity
-- Log transformation applied to Salary to normalize the distribution
 
-### 3. Categorical Features Analysis
+### 4. Numerical Distribution Analysis
 
-#### Categorical Feature Distributions
-Breakdown of unique values and frequency counts for Gender, Education, and Job Title:
+This figure presents the distribution of numerical features such as salary, age, and experience to assess skewness and spread.
 
-![Categorical Features Distribution](assets/barh_plot.png)
+![numerical_dist_analysis](./assets/numerical_dist.png)
 
-**Key Statistics:**
-- **Gender**: 2 unique values (male, female) - relatively balanced
-- **Education**: 6 levels (high school, diploma, bachelor's, master's, PhD, etc.)
-- **Job**: 193 unique job titles (one-hot encoded with infrequent handling)
 
-#### Categorical Features vs Salary Relationship
-Box plots showing salary distribution across different categorical variables:
+### 5. Anomalies & Outlier (IQR Method)
 
-![Salary Distribution by Categorical Features](assets/box_plot_categorical.png)
+This chart identifies outliers in numerical variables using the Interquartile Range method.
 
-**Insights:**
-- PhD and Master's degree holders earn significantly higher median salaries
-- Female representation and gender-based salary gaps analyzed
-- Certain job titles correlate strongly with higher compensation
+![anomalies_outliers](./assets/anomalies_outliers.png)
 
-### 4. Feature Correlation Analysis
 
-#### Correlation Heatmap
-Pearson correlation matrix highlighting relationships between numerical features:
+### 6. Data Deduplication Impact on Target Variable
 
-![Feature Correlation Matrix Heatmap](assets/correlation_matrix.png)
+This visualization compares salary distribution before and after duplicate removal to show the effect of data deduplication.
 
-**Key Findings:**
-- **Age ↔ Experience**: r = 0.82 (strong multicollinearity)
-- **Experience ↔ Salary**: Strong positive correlation
-- **Age ↔ Salary**: Strong positive correlation
-- Ridge Regression (α=10) used to handle multicollinearity
+![duplicate_impact](./assets/duplicate_impact.png)
 
-### 5. Outlier Detection & Analysis
 
-#### Outlier Detection Using IQR Method
-Identification of extreme values in Age, Experience, and Salary using Interquartile Range:
+### 7. Linear Correlation Matrix
 
-![Outlier Detection Analysis](assets/outlier_detection.png)
+This heatmap shows pairwise correlations among numerical features and helps detect multicollinearity.
 
-**Outlier Summary:**
-- **Age**: ~5% outliers (individuals > 50 years old)
-- **Experience**: ~8% outliers (individuals with > 19 years experience)
-- **Salary**: ~12% outliers (salaries > $200,000)
-- Outliers retained for model training to preserve real-world salary variations
+![correlation_matrix](./assets/correlation_matrix.png)
 
-### 6. Residual Analysis for Model Accuracy
 
-#### Residual Scatter Plots (Actual vs Predicted)
-Model performance diagnostic showing prediction errors across the two regression approaches:
+### 8. Residual Plots for Model Accuracy Assessment
 
-![Residual Plots Comparison](assets/Residuals_plot.png)
+Residual scatter plots are used to evaluate prediction error patterns and overall model fit.
 
-**Interpretation:**
-- **Linear Regression**: Points clustered around the zero line (RMSE: 0.252, R²: 0.755) ✅
-- **GridSearchCV (Ridge)**: Moderate scatter with comparable performance (RMSE: 0.263, R²: 0.732)
-- Red dashed line represents perfect prediction (zero error)
-- Randomly scattered points indicate good model fit without systematic bias
+![residual_plot](./assets/residual_plot.png)
 
-#### Residual Distribution & Normality Assessment
-Histograms and Q-Q plots validating the normality assumption for regression models:
 
-![Residual Distribution Analysis](assets/Residual_distribution.png)
+### 9. Residual Distribution & Normality Analysis
 
-**Analysis:**
-- **Histograms**: Show residual frequency distributions centered near zero
-- **Q-Q Plots**: Compare residuals to theoretical normal distribution
-  - Points following the diagonal line indicate normality
-  - Shapiro-Wilk test verifies statistical significance of normality assumption
-- Both models show excellent normality alignment, validating regression assumptions
+This figure evaluates whether model residuals are approximately normally distributed using histograms and Q-Q plots.
 
----
+![residual_dist](./assets/residual_dist.png)
 
-## 🏆 Model Performance Benchmark Metrics
 
-The dataset was split using a deterministic **80/20 Train-Test Split** (1,433 training samples, 359 test samples). All models use standardized preprocessing via scikit-learn pipelines.
+## Tech Stack
 
-| Model Type | Mean Absolute Error (MAE) | Root Mean Squared Error (RMSE) | R² Score | Performance |
-| :--- | :--- | :--- | :--- | :--- |
-| **Linear Regression** | **0.190** | **0.252** | **0.755** | Strong |
-| **GridSearchCV (Ridge)** | **0.198** | **0.263** | **0.732** | Good |
+- Python and Jupyter Notebook
+- pandas and numpy for data handling and feature engineering.[3][4]
+- scikit-learn for preprocessing, pipelines, regression models, and GridSearchCV.[3]
+- matplotlib and seaborn for EDA and diagnostic visualizations.[4]
+- scipy for statistical testing during residual analysis.[4]
 
-### Model Selection Rationale
-- **Linear Regression** emerged as the top performer with R² = 0.755 and RMSE = 0.252
-- Tested Ridge Regression with GridSearchCV using alpha values [0.1, 1, 1.8307, 10, 100]
-- GridSearchCV performed comparably with R² = 0.732 and RMSE = 0.263
-- **Recommended model**: Linear Regression for production use due to superior test performance and interpretability
-- GridSearchCV adds complexity without significant performance improvement on this dataset
-
-### Cross-Validation Strategy
-- 5-Fold Cross-Validation used during hyperparameter tuning
-- GridSearchCV evaluated 5 candidate models (5 alpha values)
-- Test set performance validated model generalization capability
-
----
-
-## 🛠️ Infrastructure Implementation & Requirements
-
-### Local Environment Setup
-To initialize and execute the analysis locally, follow these steps:
+## Quick Start
 
 ```bash
-# Clone repository (update with actual repo URL)
 git clone <your-repo-url>
 cd Salary_Prediction
 
-# Create isolated Python environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Linux/macOS
+source venv/bin/activate
+# Windows
+venv\Scripts\activate
 
-# Install dependencies
 pip install -r requirements.txt
 ```
 
-### Required Dependencies
-- `pandas`: Data manipulation and preprocessing
-- `numpy`: Numerical computations
-- `matplotlib` & `seaborn`: Data visualization
-- `scikit-learn`: Machine learning pipelines and models
-- `scipy`: Statistical testing (Shapiro-Wilk normality tests)
-- `kagglehub`: Dataset loading from Kaggle
+Run the notebook or script to preprocess the data, train the models, evaluate results, and generate salary predictions.
