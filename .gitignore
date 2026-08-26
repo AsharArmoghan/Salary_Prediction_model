@@ -26,6 +26,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.kilo
 
 # PyInstaller
 *.manifest
@@ -51,6 +52,9 @@ env/
 # Python environment
 .env
 .env.local
+
+# Saved models (registry artifacts)
+models/
 
 # Testing
 .pytest_cache/

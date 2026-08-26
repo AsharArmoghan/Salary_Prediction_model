@@ -7,10 +7,11 @@ It demonstrates an end-to-end regression workflow that includes data cleaning, f
 
 ## What This Project Shows
 
-- Real-world tabular data preprocessing, including missing value handling, duplicate removal, and skewed feature transformation.
+- Real-world tabular data preprocessing, including missing value handling, duplicate removal, and skewed target transformation.
 - Reusable scikit-learn pipelines for numerical and categorical features.
-- Model comparison between Linear Regression and Ridge Regression with GridSearchCV.
-- Evaluation using MAE, RMSE, R², and residual analysis.
+- A **unified model suite** comparing Linear Regression, Ridge (GridSearchCV), and three `HistGradientBoostingRegressor` (GBR) variants.
+- Evaluation using MAE, RMSE, R², and residual analysis, plus permutation importance for explainability.
+- A lightweight model registry (`model_registry.py`) to persist and reload the best estimator.
 
 ## Dataset and Features
 
@@ -21,18 +22,22 @@ It demonstrates an end-to-end regression workflow that includes data cleaning, f
 Preprocessing steps:
 
 - Missing values imputed using median for numeric features and most frequent value for categorical features.
-- Log1p transformation applied to Salary and Experience to reduce right skew.
-- Standard scaling used for numeric features, with one-hot and ordinal encoding for categorical variables.
+- `log1p` transformation applied to the Salary target (and Experience) to reduce right skew before modeling.
+- Standard scaling used for numeric features; categorical features encoded with ordinal encoders (with known category orders for Gender and Education), which also lets `HistGradientBoostingRegressor` treat them as native categoricals.
 
 ## Models and Performance
 
-| Model | MAE | RMSE | MSE | R²
-|---|---:|---:|---:|---|
-| Linear Regression | 0.200 | 0.265 | 0.070 | 0.727
-| Ridge Regression (GridSearchCV) | 0.199 | 0.264 | 0.070 |  0.730
+All models are built from a single shared preprocessor and trained/evaluated on the same 80/20 split of `log_salary` (metrics below are on the held-out test set). Five models make up the unified suite:
 
-Linear Regression is the preferred model because it performs slightly better on the test set and is easier to explain to non-technical stakeholders.
-Ridge Regression adds regularization, but it does not produce a meaningful improvement for this dataset.
+| Model | MAE | RMSE | MSE | R² |
+|---|---:|---:|---:|---:|
+| Linear Regression | 0.1998 | 0.2653 | 0.0704 | 0.7273 |
+| Ridge Regression (GridSearchCV) | 0.1998 | 0.2652 | 0.0703 | 0.7273 |
+| GBR (core) — `HistGradientBoostingRegressor` | 0.1258 | 0.2072 | 0.0429 | 0.8336 |
+| GBR (Native) — HGBR w/ native categoricals | **0.1154** | **0.1618** | **0.0262** | **0.8985** |
+
+
+**Outcome:** `GBR (Native)` is the best performer by a clear margin (R² ≈ 0.90, ~39% lower RMSE than the linear baselines) and is the model persisted to `models/best_gbr_native.joblib` for deployment. The simpler Linear/Ridge models remain useful as interpretable, low-latency baselines.
 
 ## Analysis Visualizations
 
@@ -85,27 +90,48 @@ This heatmap shows pairwise correlations among numerical features and helps dete
 ![correlation_matrix](./assets/correlation_matrix.png)
 
 
-### 8. Residual Plots for Model Accuracy Assessment
 
-Residual scatter plots are used to evaluate prediction error patterns and overall model fit.
+### 8. Unified Model Performance Comparison
 
-![residual_plot](./assets/residual_plot.png)
+Bar charts comparing R², RMSE, and MAE across the entire model suite (linear baselines + GBR variants), with the best-scoring model on each metric highlighted.
+
+![unified_comparison](./assets/unified_comparison.png)
+
+### 9. Residual & Normality Diagnostics — All Models
+
+A grid of predicted-vs-residual scatter plots and Q-Q plots, one column per model, used to assess homoscedasticity and residual normality across the suite.
+
+![all_model_diagnostics](./assets/all_model_diagnostics.png)
+
+### 10. Permutation Importance (GBR Native)
+
+Horizontal bars showing each feature's permutation importance (drop in R² when shuffled), ranking the most influential inputs for the chosen model.
+
+Permutation importance (GBR Native):
+  Experience   1.7600 +/- 0.0706
+  Job          0.2316 +/- 0.0142
+  Age          0.0649 +/- 0.0071
+  Education    0.0125 +/- 0.0027
+  Gender       0.0014 +/- 0.0050
 
 
-### 9. Residual Distribution & Normality Analysis
+## Repository Structure
 
-This figure evaluates whether model residuals are approximately normally distributed using histograms and Q-Q plots.
-
-![residual_dist](./assets/residual_dist.png)
-
+- `salary_prediction_model.ipynb` — end-to-end EDA + modeling notebook (Section 4 covers the unified model suite).
+- `preprocessing_pipeline.py` — reusable preprocessor, model constructors (`linear_model_pipeline`, `ridge_gridCv_pipeline`, `gbr_pipeline`, `gbr_gridCv_pipeline`, `create_native_gbr_pipeline`), `evaluate_model`, `predict_salary`, and `load_training_data`.
+- `model_registry.py` — `save_model` / `load_model` / `list_models` for persisting estimators to `models/`.
+- `evaluate_extensions.py` — standalone script that re-runs the comparison, persists the best model, and prints permutation importance.
+- `models/` — persisted estimators (e.g. `best_gbr_native.joblib`).
+- `assets/` — figures referenced above.
 
 ## Tech Stack
 
 - Python and Jupyter Notebook
-- pandas and numpy for data handling and feature engineering.[3][4]
-- scikit-learn for preprocessing, pipelines, regression models, and GridSearchCV.[3]
-- matplotlib and seaborn for EDA and diagnostic visualizations.[4]
-- scipy for statistical testing during residual analysis.[4]
+- pandas and numpy for data handling and feature engineering.
+- scikit-learn for preprocessing, pipelines, Linear/Ridge regression, `HistGradientBoostingRegressor`, `GridSearchCV`, and `permutation_importance`.
+- matplotlib and seaborn for EDA and diagnostic visualizations.
+- scipy for statistical testing (Q-Q plots) during residual analysis.
+- joblib (via `model_registry.py`) for persisting trained estimators.
 
 ## Quick Start
 
@@ -114,12 +140,23 @@ git clone <your-repo-url>
 cd Salary_Prediction
 
 python -m venv venv
-# Linux/macOS
-source venv/bin/activate
+
 # Windows
 venv\Scripts\activate
 
-pip install -r requirements.txt
+pip install -r requirements.txt   # or: pip install pandas numpy scikit-learn matplotlib seaborn scipy joblib kagglehub
 ```
 
-Run the notebook or script to preprocess the data, train the models, evaluate results, and generate salary predictions.
+Run the notebook or scripts to preprocess the data, train the model suite, evaluate results, and generate salary predictions:
+
+
+## Predicting with the Saved Model
+
+```python
+from model_registry import load_model
+from preprocessing_pipeline import predict_salary
+
+model = load_model("best_gbr_native")   # returns models/best_gbr_native.joblib
+# `records` is a DataFrame/records with columns: Age, Gender, Education, Experience, Job
+predicted_usd = predict_salary(model, records)
+```
